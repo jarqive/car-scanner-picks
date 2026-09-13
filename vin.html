@@ -220,7 +220,7 @@
       var specs = [
         specRow("Trim", r.Trim || r.Series),
         specRow("Body style", r.BodyClass),
-        specRow("Engine", [r.EngineCylinders && (r.EngineCylinders + " cyl"), r.DisplacementL && (r.DisplacementL + "L")].filter(Boolean).join(", ")),
+        specRow("Engine", [r.EngineCylinders && (r.EngineCylinders + " cyl"), r.DisplacementL && (parseFloat(r.DisplacementL).toFixed(1) + "L")].filter(Boolean).join(", ")),
         specRow("Fuel type", r.FuelTypePrimary),
         specRow("Transmission", r.TransmissionStyle),
         specRow("Drive type", r.DriveType),

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIN Decoder &amp; Recall Check</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#faf9f7;
+    --surface:#ffffff;
+    --surface-2:#f1efeb;
+    --border:#e7e4de;
+    --border-strong:#d3cfc6;
+    --ink:#15140f;
+    --muted:#6d6a61;
+    --accent:#ef4a56;
+    --accent-ink:#ffffff;
+    --good:#ffffff;
+    --good-bg:#1a8754;
+    --good-soft:#e6f4ec;
+    --good-ink:#146b41;
+    --warn:#15140f;
+    --warn-bg:#f5c344;
+    --warn-soft:#fdf3d9;
+    --warn-ink:#8a6a05;
+    --bad:#ffffff;
+    --bad-bg:#e0393e;
+    --bad-soft:#fbe7e6;
+    --bad-ink:#c22a2e;
+    --shadow: 0 1px 2px rgba(21,20,15,0.03), 0 10px 24px rgba(21,20,15,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#111113;
+      --surface:#1b1b1e;
+      --surface-2:#232326;
+      --border:#2f2f33;
+      --border-strong:#3d3d42;
+      --ink:#f4f3f0;
+      --muted:#a3a19b;
+      --accent:#ff6b74;
+      --accent-ink:#1a0508;
+      --good:#0d1f16;
+      --good-bg:#3ecb85;
+      --good-soft:#123320;
+      --good-ink:#5fdb9c;
+      --warn:#1a1508;
+      --warn-bg:#f5c344;
+      --warn-soft:#3a2f0d;
+      --warn-ink:#f0c94e;
+      --bad:#200a0a;
+      --bad-bg:#f0666a;
+      --bad-soft:#3a1616;
+      --bad-ink:#f38b8e;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.35);
+    }
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Manrope", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.5;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:2rem 1.25rem 4rem; }
+  h1,h2{ font-family:"Sora", ui-sans-serif, sans-serif; text-wrap:balance; margin:0; letter-spacing:-.01em; }
+  h1{ font-size:clamp(1.6rem, 4vw, 2.1rem); font-weight:700; }
+  p.intro{ color:var(--muted); font-size:.92rem; max-width:56ch; margin:.5rem 0 0; }
+
+  .search{
+    display:flex; gap:.6rem; margin:1.5rem 0 1.75rem; flex-wrap:wrap;
+  }
+  input#vinInput{
+    flex:1 1 20rem; font-family:"Sora", monospace, ui-sans-serif; font-size:1rem; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; color:var(--ink); background:var(--surface);
+    border:1px solid var(--border-strong); border-radius:14px; padding:.75rem 1rem;
+  }
+  input#vinInput:focus{ outline:2px solid var(--accent); outline-offset:2px; }
+  button#decodeBtn{
+    font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer;
+    border-radius:14px; padding:.75rem 1.4rem; border:1px solid var(--accent);
+    background:var(--accent); color:var(--accent-ink);
+  }
+  button#decodeBtn:hover{ filter:brightness(1.05); }
+  button#decodeBtn:disabled{ opacity:.6; cursor:default; }
+  .hint{ color:var(--muted); font-size:.78rem; margin-top:-1.1rem; margin-bottom:1.5rem; }
+
+  .state{
+    text-align:center; padding:3rem 1rem; color:var(--muted); border:1px dashed var(--border-strong);
+    border-radius:20px; background:var(--surface); font-size:.92rem;
+  }
+
+  .callout{ font-size:.88rem; line-height:1.55; border-radius:16px; padding:.9rem 1rem; margin-bottom:1.25rem; }
+  .callout.bad{ background:var(--bad-soft); color:var(--bad-ink); }
+  .callout.good{ background:var(--good-soft); color:var(--good-ink); }
+  .callout strong{ color:inherit; }
+
+  .result-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:22px;
+    padding:1.4rem; box-shadow:var(--shadow); margin-bottom:1.5rem;
+  }
+  .result-card h2{ font-size:1.3rem; font-weight:700; }
+  .result-card .vin-echo{ color:var(--muted); font-size:.8rem; margin-top:.25rem; letter-spacing:.03em; }
+
+  .spec-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(11.5rem,1fr)); gap:.9rem;
+    margin-top:1.25rem;
+  }
+  .spec{ background:var(--surface-2); border-radius:14px; padding:.7rem .9rem; }
+  .spec .label{ color:var(--muted); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .spec .value{ font-family:"Sora", sans-serif; font-size:1rem; font-weight:700; margin-top:.2rem; text-wrap:pretty; }
+
+  section.recalls{ margin-bottom:2rem; }
+  section.recalls h2{ font-size:1.05rem; font-weight:700; margin-bottom:.8rem; }
+  ul.recall-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.7rem; }
+  ul.recall-list li{
+    background:var(--bad-soft); border-radius:16px; padding:.9rem 1rem; font-size:.87rem; line-height:1.5;
+  }
+  ul.recall-list li .rc-head{ display:flex; justify-content:space-between; gap:.6rem; flex-wrap:wrap; font-weight:700; color:var(--bad-ink); margin-bottom:.3rem; }
+  ul.recall-list li .rc-date{ font-weight:600; color:var(--bad-ink); opacity:.75; font-size:.78rem; }
+  ul.recall-list li p{ margin:.35rem 0 0; color:var(--ink); }
+  ul.recall-list li p b{ font-weight:700; }
+
+  footer.foot{ margin-top:2.5rem; text-align:center; color:var(--muted); font-size:.78rem; }
+  a.back{ color:var(--muted); text-decoration:none; }
+  a.back:hover{ color:var(--ink); text-decoration:underline; }
+
+  @media (max-width:480px){
+    .search{ flex-direction:column; }
+    button#decodeBtn{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>VIN Decoder &amp; Recall Check</h1>
+  <p class="intro">Paste a VIN from any listing to confirm the real year, trim, and engine — and check for open safety recalls — straight from NHTSA's public vehicle database before you go see it in person.</p>
+
+  <div class="search">
+    <input id="vinInput" type="text" maxlength="17" placeholder="e.g. 2HGFC2F59JH500123" autocomplete="off" spellcheck="false">
+    <button id="decodeBtn">Decode VIN</button>
+  </div>
+  <div class="hint" id="lengthHint"></div>
+
+  <div id="output">
+    <div class="state">Enter a 17-character VIN above and hit Decode.</div>
+  </div>
+
+  <footer class="foot">
+    Data from NHTSA's public vPIC and Recalls APIs — decoding confirms what the factory built, not what the seller has done to the car since.<br>
+    <a class="back" href="./index.html">← Back to all listings</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var input = document.getElementById("vinInput");
+  var btn = document.getElementById("decodeBtn");
+  var output = document.getElementById("output");
+  var lengthHint = document.getElementById("lengthHint");
+
+  function esc(s){
+    var d = document.createElement("div");
+    d.textContent = (s === undefined || s === null) ? "" : String(s);
+    return d.innerHTML;
+  }
+
+  function cleanVin(v){
+    return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
+
+  input.addEventListener("input", function(){
+    input.value = cleanVin(input.value).slice(0, 17);
+    var n = input.value.length;
+    lengthHint.textContent = n === 0 ? "" : (n + " / 17 characters");
+  });
+
+  input.addEventListener("keydown", function(e){
+    if (e.key === "Enter") decode();
+  });
+  btn.addEventListener("click", decode);
+
+  function specRow(label, value){
+    if (!value || value === "Not Applicable" || value === "0" && (label === "Doors")) {
+      if (!value) return "";
+    }
+    return '<div class="spec"><div class="label">' + esc(label) + '</div><div class="value">' + esc(value) + '</div></div>';
+  }
+
+  async function decode(){
+    var vin = cleanVin(input.value);
+    if (vin.length !== 17){
+      output.innerHTML = '<div class="callout bad"><strong>That\'s ' + vin.length + ' characters.</strong> A VIN is always exactly 17 — double check for a mistyped or missing character.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Decoding…";
+    output.innerHTML = '<div class="state">Looking up ' + esc(vin) + '…</div>';
+
+    try {
+      var res = await fetch("https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/" + encodeURIComponent(vin) + "?format=json");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      var data = await res.json();
+      var r = (data.Results && data.Results[0]) || {};
+
+      if (r.ErrorCode && r.ErrorCode !== "0" && !r.Make){
+        output.innerHTML = '<div class="callout bad"><strong>Couldn\'t decode that VIN.</strong> ' + esc(r.ErrorText || "NHTSA didn't recognize it — double-check it against the windshield or door jamb.") + '</div>';
+        return;
+      }
+
+      var title = [r.ModelYear, r.Make, r.Model].filter(Boolean).join(" ");
+      var errorNote = (r.ErrorText && r.ErrorText.indexOf("0 - VIN decoded clean") === -1)
+        ? '<div class="callout warn" style="background:var(--warn-soft); color:var(--warn-ink);"><strong>Note from NHTSA:</strong> ' + esc(r.ErrorText) + '</div>'
+        : "";
+
+      var specs = [
+        specRow("Trim", r.Trim || r.Series),
+        specRow("Body style", r.BodyClass),
+        specRow("Engine", [r.EngineCylinders && (r.EngineCylinders + " cyl"), r.DisplacementL && (r.DisplacementL + "L")].filter(Boolean).join(", ")),
+        specRow("Fuel type", r.FuelTypePrimary),
+        specRow("Transmission", r.TransmissionStyle),
+        specRow("Drive type", r.DriveType),
+        specRow("Doors", r.Doors),
+        specRow("Vehicle type", r.VehicleType),
+        specRow("Plant", [r.PlantCity, r.PlantCountry].filter(Boolean).join(", ")),
+        specRow("Manufacturer", r.Manufacturer)
+      ].join("");
+
+      output.innerHTML =
+        errorNote +
+        '<div class="result-card">' +
+          '<h2>' + esc(title || "Vehicle") + '</h2>' +
+          '<div class="vin-echo">' + esc(vin) + '</div>' +
+          '<div class="spec-grid">' + specs + '</div>' +
+        '</div>' +
+        '<section class="recalls"><h2>🛑 Open safety recalls</h2><div id="recallBox"><div class="state">Checking NHTSA recalls…</div></div></section>';
+
+      loadRecalls(r.Make, r.Model, r.ModelYear);
+
+    } catch (err){
+      output.innerHTML = '<div class="callout bad"><strong>Lookup failed.</strong> ' + esc(err.message || "Network error reaching NHTSA.") + ' Try again, or decode it manually at <a href="https://vpic.nhtsa.dot.gov/decoder/" target="_blank" rel="noopener" style="color:inherit">vpic.nhtsa.dot.gov/decoder</a>.</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Decode VIN";
+    }
+  }
+
+  async function loadRecalls(make, model, year){
+    var box = document.getElementById("recallBox");
+    if (!box) return;
+    if (!make || !model || !year){
+      box.innerHTML = '<div class="state">Not enough decoded info to check recalls for this VIN.</div>';
+      return;
+    }
+    try {
+      var url = "https://api.nhtsa.gov/recalls/recallsByVehicle?make=" + encodeURIComponent(make) +
+                 "&model=" + encodeURIComponent(model) + "&modelYear=" + encodeURIComponent(year);
+      var res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      var data = await res.json();
+      var results = data.results || [];
+
+      if (results.length === 0){
+        box.innerHTML = '<div class="callout good"><strong>No open recalls found</strong> for the ' + esc(year) + ' ' + esc(make) + ' ' + esc(model) + ' in NHTSA\'s database. Still worth asking the seller whether any recall work was completed.</div>';
+        return;
+      }
+
+      box.innerHTML = '<ul class="recall-list">' + results.map(function(rc){
+        return '<li>' +
+          '<div class="rc-head"><span>' + esc(rc.Component || "Recall") + '</span><span class="rc-date">' + esc(rc.ReportReceivedDate || "") + '</span></div>' +
+          (rc.Summary ? '<p><b>Issue:</b> ' + esc(rc.Summary) + '</p>' : "") +
+          (rc.Consequence ? '<p><b>Risk:</b> ' + esc(rc.Consequence) + '</p>' : "") +
+          (rc.Remedy ? '<p><b>Fix:</b> ' + esc(rc.Remedy) + '</p>' : "") +
+        '</li>';
+      }).join("") + '</ul>';
+    } catch (err){
+      box.innerHTML = '<div class="callout bad">Couldn\'t reach NHTSA\'s recall database (' + esc(err.message || "network error") + '). Check manually at <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener" style="color:inherit">nhtsa.gov/recalls</a>.</div>';
+    }
+  }
+})();
+</script>
+</body>
+</html>

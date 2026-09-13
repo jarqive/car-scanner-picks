@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Civic Viewing Checklist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#faf9f7;
+    --surface:#ffffff;
+    --surface-2:#f1efeb;
+    --border:#e7e4de;
+    --border-strong:#d3cfc6;
+    --ink:#15140f;
+    --muted:#6d6a61;
+    --accent:#ef4a56;
+    --accent-ink:#ffffff;
+    --good:#ffffff;
+    --good-bg:#1a8754;
+    --good-soft:#e6f4ec;
+    --good-ink:#146b41;
+    --warn:#15140f;
+    --warn-bg:#f5c344;
+    --warn-soft:#fdf3d9;
+    --warn-ink:#8a6a05;
+    --bad:#ffffff;
+    --bad-bg:#e0393e;
+    --bad-soft:#fbe7e6;
+    --bad-ink:#c22a2e;
+    --shadow: 0 1px 2px rgba(21,20,15,0.03), 0 10px 24px rgba(21,20,15,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#111113;
+      --surface:#1b1b1e;
+      --surface-2:#232326;
+      --border:#2f2f33;
+      --border-strong:#3d3d42;
+      --ink:#f4f3f0;
+      --muted:#a3a19b;
+      --accent:#ff6b74;
+      --accent-ink:#1a0508;
+      --good:#0d1f16;
+      --good-bg:#3ecb85;
+      --good-soft:#123320;
+      --good-ink:#5fdb9c;
+      --warn:#1a1508;
+      --warn-bg:#f5c344;
+      --warn-soft:#3a2f0d;
+      --warn-ink:#f0c94e;
+      --bad:#200a0a;
+      --bad-bg:#f0666a;
+      --bad-soft:#3a1616;
+      --bad-ink:#f38b8e;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.35);
+    }
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Manrope", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.5;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:2rem 1.25rem 4rem; }
+  h1,h2{ font-family:"Sora", ui-sans-serif, sans-serif; text-wrap:balance; margin:0; letter-spacing:-.01em; }
+
+  .car-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:22px;
+    padding:1.25rem; box-shadow:var(--shadow); margin-bottom:1.5rem;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+  }
+  .car-card h1{ font-size:1.4rem; font-weight:700; }
+  .car-card .sub{ color:var(--muted); font-size:.85rem; margin-top:.3rem; }
+  .car-card .price{ font-family:"Sora", sans-serif; font-size:1.6rem; font-weight:800; white-space:nowrap; }
+  a.listing-link{
+    display:inline-flex; align-items:center; gap:.4rem; margin-top:.6rem;
+    font-size:.85rem; font-weight:700; color:var(--accent); text-decoration:none;
+  }
+  a.listing-link:hover{ text-decoration:underline; }
+
+  section{ margin-bottom:1.75rem; }
+  section h2{ font-size:1.05rem; font-weight:700; margin-bottom:.7rem; display:flex; align-items:center; gap:.5rem; }
+
+  .callout{
+    font-size:.88rem; line-height:1.55; border-radius:16px; padding:.9rem 1rem; margin-bottom:1rem;
+  }
+  .callout.warn{ background:var(--warn-soft); color:var(--warn-ink); }
+  .callout strong{ color:var(--ink); }
+
+  ul.check{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.6rem; }
+  ul.check li{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:.8rem 1rem; font-size:.9rem; line-height:1.5; box-shadow:var(--shadow);
+    display:flex; gap:.65rem; align-items:flex-start;
+  }
+  ul.check li::before{
+    content:"☐"; font-size:1.05rem; color:var(--muted); flex-shrink:0; line-height:1.3;
+  }
+  ul.check li b{ display:block; margin-bottom:.15rem; }
+  ul.check li span.why{ color:var(--muted); font-size:.83rem; }
+
+  footer.foot{ margin-top:2.5rem; text-align:center; color:var(--muted); font-size:.78rem; }
+  a.back{ color:var(--muted); text-decoration:none; }
+  a.back:hover{ color:var(--ink); text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="car-card">
+    <div>
+      <h1>2016 Honda Civic LX</h1>
+      <div class="sub">$13,600 · 94,000 km · Montréal, QC</div>
+      <a class="listing-link" href="https://www.facebook.com/marketplace/item/1853876685979544/" target="_blank" rel="noopener">View original listing ↗</a>
+    </div>
+    <div class="price">$13,600</div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Already flagged:</strong> this is a dealer listing — ask to see the actual CARFAX report yourself rather than taking the seller's word for "no accidents." Price is fair (close to a comparable HGrégoire Civic LX at $13,088/109,895 km, but with 16k fewer km here).
+  </div>
+
+  <section>
+    <h2>🔧 Mechanical — check in person</h2>
+    <ul class="check">
+      <li>
+        <div>
+          <b>A/C condenser</b>
+          <span class="why">Run the A/C on max for 5+ minutes — it should blow consistently cold, not warm up or cycle oddly. Pop the hood and look at the condenser (front-most radiator-like fin, behind the grille) for oily residue or visible damage — a known weak point on this generation Civic.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Confirm the engine is the 2.0L (not the 1.5T)</b>
+          <span class="why">LX trim never came with the turbo, so this should be safe, but check the engine bay sticker or VIN decode to be 100% sure before you commit — you're specifically avoiding the 1.5L turbo for its cold-weather oil dilution issue.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Rust on rocker panels, wheel wells, and subframe</b>
+          <span class="why">Standard Montreal-winter check — get it on a lift if the seller allows, or at minimum look/feel under the doors and behind the front wheels.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Fluid check — oil color/level, coolant, transmission fluid</b>
+          <span class="why">Dark or gritty oil, or a low coolant level, is a sign of deferred maintenance regardless of what the seller claims.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Tire tread and confirm both tire sets</b>
+          <span class="why">Listing claims both a winter and summer set are included — confirm both actually exist and match the car (not mismatched leftovers).</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>📄 Documents to ask for</h2>
+    <ul class="check">
+      <li>
+        <div>
+          <b>The actual CARFAX report</b>
+          <span class="why">This is your one open red flag on this listing — don't leave without seeing it, or verify the VIN yourself on carfax.ca.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>Maintenance records</b>
+          <span class="why">Seller says "no repairs needed" — ask for service history to back that up (oil changes, brake work, any A/C service).</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <b>VIN match</b>
+          <span class="why">Confirm the VIN on the windshield/door jamb matches the CARFAX and any paperwork.</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>🚗 Test drive</h2>
+    <ul class="check">
+      <li><div><b>Cold start</b><span class="why">Ask to start it cold if possible — listen for any rough idle or unusual noise on startup.</span></div></li>
+      <li><div><b>Smooth acceleration through all gears</b><span class="why">No hesitation, slipping, or harsh shifts.</span></div></li>
+      <li><div><b>Straight-line braking</b><span class="why">No pulling to one side, no grinding or vibration through the pedal.</span></div></li>
+      <li><div><b>Heated seats and CarPlay actually work</b><span class="why">Both are called out as features in the listing — confirm them live rather than trusting the description.</span></div></li>
+      <li><div><b>Highway speed for a few minutes if possible</b><span class="why">Listen for wind noise, wheel bearing hum, or vibration that only shows up at speed.</span></div></li>
+    </ul>
+  </section>
+
+  <footer class="foot">
+    Generated for your Corolla/Civic/Mazda3 shopping scan · scores your own budget, mileage cap, and dealbreakers — not general advice.<br>
+    <a class="back" href="./index.html">← Back to all listings</a>
+  </footer>
+
+</div>
+</body>
+</html>

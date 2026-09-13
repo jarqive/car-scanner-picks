@@ -73,24 +73,6 @@
 
   h1,h2,h3{ font-family:"Sora", ui-sans-serif, sans-serif; text-wrap:balance; margin:0; letter-spacing:-.01em; }
 
-  header.top{ display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
-  header.top h1{ font-size:clamp(1.9rem, 4vw, 2.5rem); font-weight:700; }
-  header.top p{ margin:.35rem 0 0; color:var(--muted); max-width:54ch; font-size:.95rem; }
-
-  .snapshot-note{
-    display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
-    background:var(--new-bg); color:var(--new-ink); border-radius:16px;
-    padding:.7rem 1rem; margin-bottom:1.25rem; font-size:.85rem; font-weight:600;
-  }
-
-  .stats{ display:flex; gap:.6rem; flex-wrap:wrap; }
-  .stat-tile{
-    background:var(--surface); border:1px solid var(--border); border-radius:16px;
-    padding:.75rem 1.1rem; min-width:92px; box-shadow:var(--shadow);
-  }
-  .stat-tile .num{ font-size:1.6rem; font-weight:800; line-height:1; font-family:"Sora", sans-serif; }
-  .stat-tile .label{ color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; margin-top:.35rem; font-weight:600; }
-
   .toolbar{
     display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
     background:var(--surface); border:1px solid var(--border); border-radius:18px;
@@ -142,23 +124,29 @@
     padding:.25rem .6rem; border-radius:999px;
   }
 
-  .reasoning{ font-size:.88rem; color:var(--ink); border-left:3px solid var(--border-strong); padding-left:.75rem; }
-  .reasoning .label{ color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; font-weight:700; display:block; margin-bottom:.25rem; }
-
-  .reliability{ font-size:.86rem; color:var(--ink); border-left:3px solid var(--good-bg); padding-left:.75rem; }
-  .reliability .label{ color:var(--good-ink); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:.3rem; margin-bottom:.25rem; }
-
   .flags{ display:flex; flex-wrap:wrap; gap:.4rem; }
   .flag{
     font-size:.74rem; font-weight:700; color:var(--bad-ink); background:var(--bad-soft); border-radius:999px;
-    padding:.2rem .6rem;
+    padding:.25rem .65rem;
   }
 
-  .card-foot{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.1rem; padding-top:.85rem; border-top:1px solid var(--border); }
-  .card-foot .status-tag{ font-size:.72rem; font-weight:700; text-transform:capitalize; background:var(--new-bg); color:var(--new-ink); border-radius:999px; padding:.25rem .65rem; }
+  .reasoning{ font-size:.92rem; color:var(--ink); line-height:1.55; }
+
+  .reliability{
+    font-size:.85rem; color:var(--ink); background:var(--good-soft);
+    border-radius:14px; padding:.7rem .85rem;
+  }
+  .reliability .label{ color:var(--good-ink); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:.3rem; margin-bottom:.3rem; }
+
+  .card-foot{ display:flex; flex-direction:column; gap:.65rem; margin-top:.1rem; padding-top:.85rem; border-top:1px solid var(--border); }
+  .card-foot .meta-row{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .card-foot .status-tag{ font-size:.72rem; font-weight:700; text-transform:capitalize; background:var(--new-bg); color:var(--new-ink); border-radius:999px; padding:.35rem .75rem; }
   .card-foot .scanned{ color:var(--muted); font-size:.72rem; margin-left:auto; font-weight:600; }
-  a.view-link{ color:var(--accent); font-size:.82rem; font-weight:700; text-decoration:none; }
-  a.view-link:hover{ text-decoration:underline; }
+  a.view-link{
+    display:flex; align-items:center; justify-content:center; gap:.4rem; background:var(--accent); color:var(--accent-ink);
+    font-size:.9rem; font-weight:700; text-decoration:none; padding:.75rem 1.1rem; border-radius:14px; width:100%;
+  }
+  a.view-link:hover{ filter:brightness(1.06); }
 
   .empty{
     text-align:center; padding:4rem 1rem; color:var(--muted); border:1px dashed var(--border-strong);
@@ -177,16 +165,6 @@
 <body>
 
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Car Scanner</h1>
-      <p>A shared snapshot of used-car listings scored against one buyer's criteria (budget, mileage, reliability, and known dealbreakers) — Facebook Marketplace and HGrégoire, Montreal.</p>
-    </div>
-    <div class="stats" id="stats"></div>
-  </header>
-
-  <div class="snapshot-note">📸 This is a static snapshot, not a live tool — it won't update on its own. Ask the person who sent you this link for a refresh if you want the latest.</div>
-
   <div class="toolbar">
     <label>Min score
       <input type="number" id="minScore" min="0" max="100" step="5" value="80" style="width:4.5rem">
@@ -302,11 +280,6 @@ var LISTINGS = [
     });
 
     var total = LISTINGS.length;
-    var avg = total ? Math.round(LISTINGS.reduce(function(s,c){ return s + (c.score || 0); }, 0) / total) : 0;
-
-    document.getElementById("stats").innerHTML = [["Scanned", total], ["Avg score", avg], ["Shown", filtered.length]]
-      .map(function(s){ return '<div class="stat-tile"><div class="num">' + s[1] + '</div><div class="label">' + s[0] + '</div></div>'; })
-      .join("");
 
     countLabel.textContent = filtered.length + " of " + total + " shown";
 
@@ -334,13 +307,15 @@ var LISTINGS = [
             (typeof c.mileage === "number" ? '<span>' + fmtKm(c.mileage) + '</span>' : '') +
             (c.location ? '<span>' + esc(c.location) + '</span>' : '') +
           '</div>' +
-          (c.reasoning ? '<div class="reasoning"><span class="label">Why</span>' + esc(c.reasoning) + '</div>' : '') +
-          (c.reliability ? '<div class="reliability"><span class="label">\u{1F527} Reliability &amp; Montreal service</span>' + esc(c.reliability) + '</div>' : '') +
           (flags.length ? '<div class="flags">' + flags.map(function(f){ return '<span class="flag">' + esc(f) + '</span>'; }).join("") + '</div>' : '') +
+          (c.reasoning ? '<div class="reasoning">' + esc(c.reasoning) + '</div>' : '') +
+          (c.reliability ? '<div class="reliability"><span class="label">\u{1F527} Reliability &amp; Montreal service</span>' + esc(c.reliability) + '</div>' : '') +
           '<div class="card-foot">' +
-            '<span class="status-tag">' + esc(c.status || "new") + '</span>' +
             (c.url ? '<a class="view-link" href="' + esc(c.url) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
-            (c.scannedAt ? '<span class="scanned">' + esc(c.scannedAt) + '</span>' : '') +
+            '<div class="meta-row">' +
+              '<span class="status-tag">' + esc(c.status || "new") + '</span>' +
+              (c.scannedAt ? '<span class="scanned">' + esc(c.scannedAt) + '</span>' : '') +
+            '</div>' +
           '</div>' +
         '</div>'
       );

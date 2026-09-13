@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Scanner — Shared Snapshot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#eef1f4;
+    --surface:#ffffff;
+    --surface-2:#f7f8fa;
+    --border:#d7dce3;
+    --border-strong:#c3cad4;
+    --ink:#161b22;
+    --muted:#626b79;
+    --accent:#cf5b1e;
+    --accent-ink:#ffffff;
+    --good:#1f8a5f;
+    --good-bg:#e4f4ec;
+    --warn:#a56c0a;
+    --warn-bg:#faf1de;
+    --bad:#c23a3a;
+    --bad-bg:#fbe8e8;
+    --new:#3a5fc2;
+    --new-bg:#e8ecfb;
+    --shadow: 0 1px 2px rgba(22,27,34,0.04), 0 6px 16px rgba(22,27,34,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14171c;
+      --surface:#1b2027;
+      --surface-2:#20262e;
+      --border:#2c333c;
+      --border-strong:#3a424d;
+      --ink:#eef1f4;
+      --muted:#9aa4b2;
+      --accent:#e8763e;
+      --accent-ink:#191008;
+      --good:#4fd399;
+      --good-bg:#123326;
+      --warn:#e2b23f;
+      --warn-bg:#3a2d0f;
+      --bad:#f07272;
+      --bad-bg:#3a1919;
+      --new:#8ba4f0;
+      --new-bg:#1c2440;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.35);
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.45;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+
+  h1,h2,h3{ font-family:"Barlow Condensed", ui-sans-serif, sans-serif; text-wrap:balance; margin:0; }
+
+  header.top{ display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+  header.top h1{ font-size:2.4rem; font-weight:700; letter-spacing:.2px; }
+  header.top p{ margin:.25rem 0 0; color:var(--muted); max-width:52ch; font-size:.95rem; }
+
+  .snapshot-note{
+    display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+    background:var(--new-bg); color:var(--new); border-radius:10px;
+    padding:.6rem .9rem; margin-bottom:1.25rem; font-size:.85rem; font-weight:500;
+  }
+
+  .stats{ display:flex; gap:.75rem; flex-wrap:wrap; }
+  .stat-tile{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:.65rem 1rem; min-width:96px; box-shadow:var(--shadow);
+  }
+  .stat-tile .num{ font-family:"IBM Plex Mono", monospace; font-size:1.5rem; font-weight:600; line-height:1; }
+  .stat-tile .label{ color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem; }
+
+  .toolbar{
+    display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:.75rem 1rem; margin-bottom:1.5rem;
+  }
+  .toolbar label{ font-size:.78rem; color:var(--muted); display:flex; align-items:center; gap:.4rem; }
+  select, input[type="number"]{
+    font-family:inherit; font-size:.85rem; color:var(--ink); background:var(--surface);
+    border:1px solid var(--border-strong); border-radius:6px; padding:.35rem .55rem;
+  }
+  select:focus, input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .spacer{ flex:1; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:1rem; align-items:start; }
+
+  .card{
+    position:relative; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:1.1rem 1.25rem 1rem; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:.65rem;
+  }
+  .card-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; }
+  .card-head h3{ font-size:1.3rem; font-weight:600; line-height:1.15; }
+  .price-block{ display:flex; flex-direction:column; align-items:flex-end; gap:.25rem; }
+  .price{ font-family:"IBM Plex Mono", monospace; font-size:1.25rem; font-weight:600; white-space:nowrap; }
+  .price-compare{
+    font-size:.68rem; font-weight:600; line-height:1.3; text-align:right; max-width:11.5rem;
+    padding:.12rem .4rem; border-radius:5px; white-space:normal;
+  }
+  .price-compare.good{ background:var(--good-bg); color:var(--good); }
+  .price-compare.warn{ background:var(--warn-bg); color:var(--warn); }
+  .price-compare.bad{ background:var(--bad-bg); color:var(--bad); }
+
+  .facts{ display:flex; flex-wrap:wrap; gap:.35rem .6rem; color:var(--muted); font-size:.8rem; }
+  .facts span:not(:last-child)::after{ content:"·"; margin-left:.6rem; color:var(--border-strong); }
+
+  .score-row{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .badge{
+    display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem; font-weight:600;
+    padding:.25rem .6rem; border-radius:999px; line-height:1;
+  }
+  .badge .n{ font-family:"IBM Plex Mono", monospace; font-size:.85rem; }
+  .badge.good{ background:var(--good-bg); color:var(--good); }
+  .badge.warn{ background:var(--warn-bg); color:var(--warn); }
+  .badge.bad{ background:var(--bad-bg); color:var(--bad); }
+
+  .reasoning{ font-size:.87rem; color:var(--ink); }
+  .reasoning .label{ color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:.2rem; }
+
+  .reliability{
+    font-size:.85rem; color:var(--ink); background:var(--surface-2);
+    border:1px solid var(--border); border-radius:8px; padding:.55rem .7rem;
+  }
+  .reliability .label{ color:var(--good); font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:.3rem; margin-bottom:.25rem; }
+
+  .flags{ display:flex; flex-wrap:wrap; gap:.35rem; }
+  .flag{
+    font-size:.72rem; color:var(--bad); background:var(--bad-bg); border-radius:5px;
+    padding:.15rem .45rem;
+  }
+
+  .card-foot{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.2rem; padding-top:.65rem; border-top:1px solid var(--border); }
+  .card-foot .status-tag{ font-size:.72rem; color:var(--muted); text-transform:capitalize; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:.15rem .5rem; }
+  .card-foot .scanned{ color:var(--muted); font-size:.72rem; margin-left:auto; font-family:"IBM Plex Mono", monospace; }
+  a.view-link{ color:var(--accent); font-size:.82rem; font-weight:500; text-decoration:none; }
+  a.view-link:hover{ text-decoration:underline; }
+
+  .empty{
+    text-align:center; padding:4rem 1rem; color:var(--muted); border:1px dashed var(--border-strong);
+    border-radius:12px; background:var(--surface);
+  }
+  .empty h2{ color:var(--ink); font-size:1.5rem; margin-bottom:.4rem; }
+
+  footer.foot{ margin-top:2.5rem; text-align:center; color:var(--muted); font-size:.78rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Car Scanner</h1>
+      <p>A shared snapshot of used-car listings scored against one buyer's criteria (budget, mileage, reliability, and known dealbreakers) — Facebook Marketplace and HGrégoire, Montreal.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="snapshot-note">📸 This is a static snapshot, not a live tool — it won't update on its own. Ask the person who sent you this link for a refresh if you want the latest.</div>
+
+  <div class="toolbar">
+    <label>Min score
+      <input type="number" id="minScore" min="0" max="100" step="5" value="80" style="width:4.5rem">
+    </label>
+    <label>Sort by
+      <select id="sortBy">
+        <option value="score">Score (high → low)</option>
+        <option value="price">Price (low → high)</option>
+      </select>
+    </label>
+    <div class="spacer"></div>
+    <span id="countLabel" style="color:var(--muted); font-size:.8rem; font-family:'IBM Plex Mono', monospace;"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="emptyState" hidden>
+    <h2>Nothing meets your filters</h2>
+    <p>Lower "Min score" above to see more of the scanned listings.</p>
+  </div>
+
+  <footer class="foot">Snapshot generated 2026-09-14 · scores and reasoning reflect one buyer's own budget, mileage cap, and dealbreakers — not general advice.</footer>
+</div>
+
+<script>
+var LISTINGS = [
+  {"location":"Montréal, QC","make":"Toyota","mileage":85824,"model":"Corolla","postedAt":"4 weeks ago","price":19555,"reasoning":"Was your best 2020-2022 Corolla match (LE, heated seats, CarPlay confirmed) but at $19,555 it's far over your new $15,000 hard budget cap. This whole model-year range is now out of reach at your budget.","redFlags":["Over your $15,000 max budget by $4,555"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2021 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/1025348677012080/","verdict":"Over budget — reject","year":2021,"id":"fb-1025348677012080"},
+  {"location":"Montréal, QC","make":"Honda","mileage":110600,"model":"Civic","postedAt":"4 weeks ago","price":15400,"reasoning":"Was your strongest Civic match — 2.0L confirmed, clean title, heated seats, sunroof — but at $15,400 it's now $400 over your new $15,000 hard budget cap. Worth a lowball offer at $15,000 given everything else about it checks out, but reject as listed.","redFlags":["Over your $15,000 max budget by $400","A/C condenser service history not mentioned"],"scannedAt":"2026-09-10","score":20,"status":"new","title":"2017 Honda Civic EX","url":"https://www.facebook.com/marketplace/item/1032172856380765/","verdict":"Over budget — reject","year":2017,"id":"fb-1032172856380765"},
+  {"location":"Notre-Dame-de-l'Île-Perrot, QC","make":"Hyundai","mileage":108000,"model":"Elantra","postedAt":"8 weeks ago","price":13900,"priceCompare":"Priced almost the same as a HGrégoire 2019 Elantra ($13,698 at 100,892 km) that comes with a full 219-point inspection report — similar money here buys less certainty, plus this listing's engine-spec error.","priceCompareTone":"warn","reasoning":"Accident-free, one owner, winter tires included — but the listing states a '2.4L DOHC engine,' which doesn't exist in any Elantra of this generation (Elantras run 1.8L or 2.0L only). That's either a copy-paste error from another listing or a sign the seller doesn't know the car well; either way, verify the actual engine and treat the rest of the description with a bit more scrutiny. Mileage (108k) is right at the edge of your cap. Listed price also doesn't match the description's stated price ($13,900 vs $13,500).","redFlags":["Engine spec (2.4L) doesn't exist for this model — likely copy-paste error, verify everything","Mileage right at the edge of your 110,000 km cap","Price mismatch between listing and description"],"reliability":"The listing's stated '2.4L' engine doesn't exist in any Elantra — likely a copy-paste error, but it means the actual engine (and whether it's the safe 2.0L MPI or something else) isn't reliably confirmed here. Elantras in general are cheap and easy to service at any independent garage in Montreal, common parts.","scannedAt":"2026-09-12","score":42,"status":"new","title":"2019 Hyundai Elantra","url":"https://www.facebook.com/marketplace/item/1032906909152882/","verdict":"Consider — description inconsistency","year":2019,"id":"fb-1032906909152882"},
+  {"location":"Laval, QC","make":"Hyundai","mileage":51500,"model":"Elantra","postedAt":"1 week ago","price":15000,"reasoning":"Heated leather seats, sunroof, CarPlay, low mileage — looks great until the seller states outright 'RECONSTRUIT / REBUILT' in the middle of the feature list. Automatic reject under your title dealbreaker, no matter how well-equipped it is.","redFlags":["Rebuilt title — hard dealbreaker (disclosed mid-listing amid feature list)"],"scannedAt":"2026-09-11","score":4,"status":"new","title":"2021 Hyundai Elantra SEL","url":"https://www.facebook.com/marketplace/item/1059671083582585/","verdict":"Reject — dealbreaker","year":2021,"id":"fb-1059671083582585"},
+  {"location":"Terrebonne, QC","make":"Toyota","mileage":98641,"model":"RAV4","postedAt":"6 days ago","price":15344,"reasoning":"Genuinely well cared for — one owner, dealer-maintained at a Toyota dealership, and rust-proofed (a real Montreal-specific plus). But it's $344 over your $15,000 cap and the seller states the price is firm/non-negotiable plus tax, so there's no room to close that gap.","redFlags":["Over your $15,000 max budget by $344","Seller states price is firm, non-negotiable"],"scannedAt":"2026-09-10","score":35,"status":"new","title":"2014 Toyota RAV4 XLE","url":"https://www.facebook.com/marketplace/item/1063250960007096/","verdict":"Over budget — firm price","year":2014,"id":"fb-1063250960007096"},
+  {"location":"Chambly, QC","make":"Honda","mileage":133502,"model":"CR-V","postedAt":"1 week ago","price":14999,"reasoning":"Rust-proofed with a highly-rated long-standing seller, but at 133,502 km it's over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (133.5k km)"],"scannedAt":"2026-09-11","score":12,"status":"new","title":"2016 Honda CR-V SE AWD","url":"https://www.facebook.com/marketplace/item/1071328995759637/","verdict":"Over mileage — reject","year":2016,"id":"fb-1071328995759637"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":54298,"model":"Corolla","postedAt":"1 week ago","price":20895,"reasoning":"Over your new $15,000 hard budget cap by close to $6,000. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,895"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2021 Toyota Corolla L","url":"https://www.facebook.com/marketplace/item/1072014838572523/","verdict":"Over budget — reject","year":2021,"id":"fb-1072014838572523"},
+  {"location":"Boucherville, QC","make":"Toyota","mileage":110350,"model":"Corolla","postedAt":"1 week ago","price":15388,"reasoning":"Already a weak listing (bare-minimum description, newer seller account) and now also $388 over your new $15,000 hard budget cap. Reject.","redFlags":["Over your $15,000 max budget by $388","Essentially no seller description","Newer seller account"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2017 Toyota Corolla","url":"https://www.facebook.com/marketplace/item/1118068043981996/","verdict":"Over budget — reject","year":2017,"id":"fb-1118068043981996"},
+  {"location":"St-Eustache, QC","make":"Toyota","mileage":170000,"model":"Corolla","postedAt":"1 day ago","price":12390,"reasoning":"Cheap dealer listing but at 170,000 km it's far over your under-110,000 km hard mileage ceiling, with only generic dealer copy and no CVT fluid history to evaluate the Corolla dealbreaker check anyway.","redFlags":["Over your 110,000 km mileage ceiling (170k km)","Generic dealer description, no CVT fluid history"],"scannedAt":"2026-09-12","score":8,"status":"new","title":"2017 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/1302080516319224/","verdict":"Over mileage — reject","year":2017,"id":"fb-1302080516319224"},
+  {"location":"Laval, QC","make":"Honda","mileage":166583,"model":"Civic","postedAt":"1 day ago","price":13590,"reasoning":"Double reject: the Civic Hatchback only ever came with the 1.5L turbo engine in this generation (no naturally-aspirated option existed), which is your hard dealbreaker, and at 166,583 km it's also far over your mileage ceiling. Otherwise a transparent listing (CARFAX disclosed an $8,700 rear bumper claim, dealer-maintained), but the dealbreakers stand regardless.","redFlags":["1.5L turbo engine — hard dealbreaker (all hatchback trims have it)","Over your 110,000 km mileage ceiling (166.6k km)","Disclosed accident claim ($8,700 rear bumper)"],"scannedAt":"2026-09-12","score":3,"status":"new","title":"2018 Honda Civic Hatchback LX","url":"https://www.facebook.com/marketplace/item/1326574916025787/","verdict":"Reject — dealbreaker","year":2018,"id":"fb-1326574916025787"},
+  {"location":"St-Basile-le-Grand, QC","make":"Toyota","mileage":87559,"model":"Corolla","postedAt":"14 weeks ago","price":20995,"reasoning":"Over your new $15,000 hard budget cap by close to $6,000. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,995"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2021 Toyota Corolla SE CVT","url":"https://www.facebook.com/marketplace/item/1348882553787363/","verdict":"Over budget — reject","year":2021,"id":"fb-1348882553787363"},
+  {"location":"Longueuil, QC","make":"Toyota","mileage":110000,"model":"Corolla","postedAt":"5 weeks ago","price":15488,"reasoning":"Would have been a good deal (SE trim, heated seats, no accident claimed) but at $15,488 it's now $488 over your new $15,000 hard budget cap. Reject unless the seller comes down.","redFlags":["Over your $15,000 max budget by $488"],"scannedAt":"2026-09-10","score":18,"status":"new","title":"2017 Toyota Corolla SE","url":"https://www.facebook.com/marketplace/item/1356096136734664/","verdict":"Over budget — reject","year":2017,"id":"fb-1356096136734664"},
+  {"location":"Terrebonne, QC","make":"Honda","mileage":98700,"model":"Civic","postedAt":"1 week ago","price":16995,"reasoning":"Well-equipped (CarPlay, Honda Sensing, heated seats) but at $16,995 it's almost $2,000 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $1,995"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2017 Honda Civic EX","url":"https://www.facebook.com/marketplace/item/1389150072645774/","verdict":"Over budget — reject","year":2017,"id":"fb-1389150072645774"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":187000,"model":"Corolla","postedAt":"1 week ago","price":13700,"reasoning":"Recent brake work (Sept 2026) and heated seats, but at 187,000 km (~31k km/year for a 2019, unusually high) it's far over your under-110,000 km hard mileage ceiling.","redFlags":["Over your 110,000 km mileage ceiling by a wide margin (187k km)","Unusually high annual mileage — possible commercial/rideshare use"],"scannedAt":"2026-09-12","score":6,"status":"new","title":"2019 Toyota Corolla SE","url":"https://www.facebook.com/marketplace/item/1394922595355444/","verdict":"Over mileage — reject","year":2019,"id":"fb-1394922595355444"},
+  {"location":"Laval, QC","make":"Toyota","mileage":104000,"model":"Corolla","postedAt":"2 weeks ago","price":14995,"priceCompare":"$2,495 more than another 2017 Corolla we found with 32,000 km less ($12,500 at 72k km) — you're paying more for meaningfully more mileage.","priceCompareTone":"bad","reasoning":"Decent price and mileage, manual transmission (no CVT concern), and Marketplace shows a 'very good condition' tag. But the seller's description is pure sales copy — emoji, urgency language ('first come first served'), no maintenance history, accident history, or ownership count. Ask directly for service and accident records before treating this as more than a maybe.","redFlags":["Description is marketing copy with no substantive vehicle history","Urgency/scarcity language — mild pressure-sale pattern"],"reliability":"Manual transmission sidesteps the CVT question entirely, and this generation Corolla has no widespread known issues otherwise. Very common in Montreal — cheap parts, easy service at any independent garage.","scannedAt":"2026-09-10","score":52,"status":"new","title":"2017 Toyota Corolla","url":"https://www.facebook.com/marketplace/item/1402866581845323/","verdict":"Consider — thin listing","year":2017,"id":"fb-1402866581845323"},
+  {"location":"Laval, QC","make":"Subaru","mileage":108000,"model":"Forester","postedAt":"6 days ago","price":12500,"reasoning":"Genuinely the most transparent listing of this whole batch — annual rust-proofing since 2017, WeatherTech mats, two tire sets, heated seats, and the seller proactively discloses a rebuilt title from 2016 with the full reconstruction file included. That transparency is commendable, but it's still a rebuilt title, which is an automatic reject under your criteria regardless of documentation quality. This is the third rebuilt-title vehicle found in this batch — buried or disclosed rebuilt titles seem to be a real pattern in this price segment right now.","redFlags":["Rebuilt title (2016) — hard dealbreaker, despite unusually thorough documentation","3 owners"],"scannedAt":"2026-09-11","score":6,"status":"new","title":"2015 Subaru Forester","url":"https://www.facebook.com/marketplace/item/1410725454456959/","verdict":"Reject — dealbreaker","year":2015,"id":"fb-1410725454456959"},
+  {"location":"Montréal, QC","make":"Hyundai","mileage":96000,"model":"Elantra","postedAt":"1 week ago","price":12500,"priceCompare":"The best-value Elantra found — same-year or newer HGrégoire comps at similar mileage run $1,198-$2,498 more.","priceCompareTone":"good","reasoning":"VIN provided, no accident or rebuild mentioned, blind spot detection, lane assist, heated seats, CarPlay, sunroof, keyless entry — well equipped and under both your budget and mileage caps. Standard engine (no turbo/GDI mentioned), so your Hyundai engine-recall caution likely doesn't apply. Price is negotiable in person per the seller.","redFlags":["Confirm engine displacement/trim in person to fully rule out the GDI/turbo caution"],"reliability":"No turbo/GDI engine mentioned, so this should be the standard 2.0L MPI — no widespread known issues, and outside the Hyundai/Kia GDI recall history (confirm trim to be fully sure). Elantras are common here — cheap parts, easy for any independent garage.","scannedAt":"2026-09-12","score":80,"status":"new","title":"2020 Hyundai Elantra Preferred","url":"https://www.facebook.com/marketplace/item/1412946167687684/","verdict":"Strong buy","year":2020,"id":"fb-1412946167687684"},
+  {"location":"Montréal, QC","make":"Honda","mileage":60797,"model":"Civic","postedAt":"2 weeks ago","price":17450,"reasoning":"Seller states this vehicle has a REBUILT / STOLEN-RECOVERED title ('TITRE RECONSTRUIT / VOLÉ RETROUVÉ'). That's an automatic reject under your title-status dealbreaker regardless of how good the mileage or equipment looks. Dealer listing (Ballout Autos).","redFlags":["Rebuilt / stolen-recovered title — hard dealbreaker"],"scannedAt":"2026-09-10","score":4,"status":"new","title":"2019 Honda Civic Touring","url":"https://www.facebook.com/marketplace/item/1413408484103409/","verdict":"Reject — dealbreaker","year":2019,"id":"fb-1413408484103409"},
+  {"location":"Brossard, QC","make":"Honda","mileage":118000,"model":"Civic","postedAt":"2 weeks ago","price":15499,"reasoning":"Already a pass due to non-original swapped parts and unclear history — also now $499 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $499","Non-original parts swapped in from a different trim","Engine size not stated"],"scannedAt":"2026-09-10","score":12,"status":"new","title":"2016 Honda Civic","url":"https://www.facebook.com/marketplace/item/1453553166568890/","verdict":"Over budget — reject","year":2016,"id":"fb-1453553166568890"},
+  {"location":"Laval, QC","make":"Toyota","mileage":148154,"model":"Prius C","postedAt":"2 weeks ago","price":13795,"reasoning":"Already a thin listing, and at 148,154 km it's also well over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (148k km)","Thin description"],"scannedAt":"2026-09-11","score":10,"status":"new","title":"2016 Toyota Prius C","url":"https://www.facebook.com/marketplace/item/1464491812186280/","verdict":"Over mileage — reject","year":2016,"id":"fb-1464491812186280"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":143573,"model":"Camry Hybrid","postedAt":"1 week ago","price":14395,"reasoning":"Dealer listing (Toyota Montréal-Nord) with heated seats and dual-zone climate, but at 143,573 km it's over your under-110,000 km hard mileage ceiling.","redFlags":["Over your 110,000 km mileage ceiling (143.6k km)","Dealer lot listing"],"scannedAt":"2026-09-12","score":10,"status":"new","title":"2014 Toyota Camry Hybrid","url":"https://www.facebook.com/marketplace/item/1465393975640063/","verdict":"Over mileage — reject","year":2014,"id":"fb-1465393975640063"},
+  {"location":"Terrebonne, QC","make":"Mazda","mileage":55000,"model":"Mazda3","postedAt":"2 weeks ago","price":15892,"reasoning":"Lowest mileage in the whole scan (55k km) and otherwise a good match, but at $15,892 it's $892 over your new $15,000 hard budget cap. Worth a lowball offer given the mileage, but reject as listed.","redFlags":["Over your $15,000 max budget by $892"],"scannedAt":"2026-09-10","score":20,"status":"new","title":"2017 Mazda3 GX (2.0L)","url":"https://www.facebook.com/marketplace/item/1473176054635660/","verdict":"Over budget — reject","year":2017,"id":"fb-1473176054635660"},
+  {"location":"Montréal, QC","make":"Hyundai","mileage":47000,"model":"Elantra","postedAt":"3 weeks ago","price":12400,"reasoning":"2.0L engine confirmed (fine, not the GDI/turbo caution), low mileage, winter+summer tires included — looks excellent until 'Reconstruite et Certifiee par la SAAQ' (rebuilt, SAAQ-certified) appears mid-checklist. Automatic reject under your title dealbreaker. This is the second Elantra in this batch with a rebuilt title buried in an otherwise glowing description — worth being extra alert to that pattern on this model.","redFlags":["Rebuilt title — hard dealbreaker (disclosed mid-listing amid feature list)"],"scannedAt":"2026-09-11","score":4,"status":"new","title":"2020 Hyundai Elantra","url":"https://www.facebook.com/marketplace/item/1477550100892811/","verdict":"Reject — dealbreaker","year":2020,"id":"fb-1477550100892811"},
+  {"location":"Laval, QC","make":"Toyota","mileage":138000,"model":"Camry Hybrid","postedAt":"5 days ago","price":8199,"reasoning":"Was your best value pick overall — hybrid, huge price cushion, no rust — but at 138,000 km it's now over your new under-110,000 km hard mileage ceiling. Reject under the new rule even though the hybrid drivetrain would normally make high mileage less of a concern.","redFlags":["Over your new 110,000 km mileage ceiling (138k km)"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2014 Toyota Camry Hybrid","url":"https://www.facebook.com/marketplace/item/1507004808140392/","verdict":"Over mileage — reject","year":2014,"id":"fb-1507004808140392"},
+  {"location":"Montréal, QC","make":"Hyundai","mileage":130000,"model":"Elantra","postedAt":"8 weeks ago","price":14300,"reasoning":"No accident/title issues stated, but at 130,000 km it's over your new under-110,000 km hard mileage ceiling on top of already being unusually high mileage for a 2021.","redFlags":["Over your new 110,000 km mileage ceiling (130k km)"],"scannedAt":"2026-09-11","score":10,"status":"new","title":"2021 Hyundai Elantra","url":"https://www.facebook.com/marketplace/item/1530237957958112/","verdict":"Over mileage — reject","year":2021,"id":"fb-1530237957958112"},
+  {"location":"Longueuil, QC","make":"Honda","mileage":158184,"model":"CR-V","postedAt":"5 weeks ago","price":14990,"reasoning":"Dealer listing with VIN provided, but at 158,184 km it's well over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (158k km)","Dealer lot listing"],"scannedAt":"2026-09-11","score":10,"status":"new","title":"2014 Honda CR-V EX AWD","url":"https://www.facebook.com/marketplace/item/1535800624949149/","verdict":"Over mileage — reject","year":2014,"id":"fb-1535800624949149"},
+  {"location":"Boisbriand, QC","make":"Toyota","mileage":168000,"model":"Corolla","postedAt":"4 weeks ago","price":12000,"reasoning":"Genuinely transparent listing — CARFAX available, 2 tire sets, honest disclosure of minor rust at the door bottoms and chipped paint — but at 168,000 km it's far over your under-110,000 km hard mileage ceiling, and the disclosed rust is a real concern this early given your Montreal criteria.","redFlags":["Over your 110,000 km mileage ceiling (168k km)","Minor rust disclosed on both door bottoms"],"scannedAt":"2026-09-12","score":10,"status":"new","title":"2017 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/1548084653652974/","verdict":"Over mileage — reject","year":2017,"id":"fb-1548084653652974"},
+  {"location":"Terrebonne, QC","make":"Toyota","mileage":44445,"model":"Corolla","postedAt":"11 weeks ago","price":20849,"reasoning":"This entire 2020-2022 Corolla row is paused: it starts around $17K, well above your new $15,000 hard budget cap. Reject regardless of trim or mileage.","redFlags":["Over your $15,000 max budget by $5,849","Entire 2020-2022 Corolla row is now out of budget"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2020 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/1674680043748016/","verdict":"Over budget — reject","year":2020,"id":"fb-1674680043748016"},
+  {"location":"Montréal, QC","make":"Subaru","mileage":65000,"model":"Impreza","postedAt":"3 weeks ago","price":9500,"priceCompare":"The best-value Impreza found by a wide margin — even a similar-mileage HGrégoire Impreza at 87k km costs $3,477 more.","priceCompareTone":"good","reasoning":"Exceptionally low mileage for its age (65k km over 11 years, ~5,900 km/year), 2.0L engine confirmed, standard AWD (a real Montreal winter advantage), one owner, non-smoker, VIN provided, and a winter tire set included. $5,500 under your budget. Ask about oil consumption history per your Subaru checklist — FB25-era engines can burn oil — and confirm no accident history since it isn't explicitly stated.","redFlags":["Oil consumption history not mentioned — ask (known issue on this era's engine)","Accident history not explicitly stated — confirm"],"reliability":"This era's Subaru 2.0L boxer can run slightly higher oil consumption than average — worth asking the seller if they've had to top up between changes, but not a dealbreaker on its own. AWD is otherwise robust. Subaru is less common than Toyota/Honda in Montreal but still well-supported; routine service is fine at most independent garages.","scannedAt":"2026-09-11","score":87,"status":"new","title":"2014 Subaru Impreza 2.0i AWD","url":"https://www.facebook.com/marketplace/item/1700630844325943/","verdict":"Strong buy — best value candidate","year":2014,"id":"fb-1700630844325943"},
+  {"location":"Dollard-des Ormeaux, QC","make":"Toyota","mileage":199975,"model":"Camry Hybrid","postedAt":"4 weeks ago","price":13500,"reasoning":"Well equipped with CARFAX available, but at 199,975 km it's far beyond your new under-110,000 km hard mileage ceiling. Reject regardless of hybrid durability.","redFlags":["Over your new 110,000 km mileage ceiling by a wide margin (200k km)"],"scannedAt":"2026-09-11","score":8,"status":"new","title":"2017 Toyota Camry Hybrid","url":"https://www.facebook.com/marketplace/item/1710192196698836/","verdict":"Over mileage — reject","year":2017,"id":"fb-1710192196698836"},
+  {"location":"Gore, QC","make":"Honda","mileage":159380,"model":"CR-V","postedAt":"4 days ago","price":10750,"reasoning":"Cheap and AWD but thin on detail, and at 159,380 km it's well over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (159k km)","Very thin description"],"scannedAt":"2026-09-11","score":8,"status":"new","title":"2013 Honda CR-V AWD","url":"https://www.facebook.com/marketplace/item/1738507244071380/","verdict":"Over mileage — reject","year":2013,"id":"fb-1738507244071380"},
+  {"location":"Brossard, QC","make":"Honda","mileage":112117,"model":"Civic","postedAt":"1 week ago","price":16989,"reasoning":"Already thin on details (no trim/engine/history) and now also $1,989 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $1,989","Engine size not stated"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2018 Honda Civic","url":"https://www.facebook.com/marketplace/item/1758951625358225/","verdict":"Over budget — reject","year":2018,"id":"fb-1758951625358225"},
+  {"location":"Brossard, QC","make":"Mazda","mileage":108884,"model":"Mazda3","postedAt":"1 week ago","price":17988,"reasoning":"Was your best-documented Mazda3 (CARFAX offered, CarPlay, heated seats) but at $17,988 it's about $3,000 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $2,988"],"scannedAt":"2026-09-10","score":18,"status":"new","title":"2019 Mazda3 GS Sport Hatchback (2.5L)","url":"https://www.facebook.com/marketplace/item/1773828683629330/","verdict":"Over budget — reject","year":2019,"id":"fb-1773828683629330"},
+  {"location":"Laval, QC","make":"Honda","mileage":160000,"model":"CR-V","postedAt":"today","price":11500,"reasoning":"AWD with extras included, but at 160,000 km it's well over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (160k km)"],"scannedAt":"2026-09-11","score":8,"status":"new","title":"2015 Honda CR-V AWD","url":"https://www.facebook.com/marketplace/item/1784210355974410/","verdict":"Over mileage — reject","year":2015,"id":"fb-1784210355974410"},
+  {"location":"Montréal, QC","make":"Honda","mileage":94000,"model":"Civic","postedAt":"2 days ago","price":13600,"priceCompare":"Priced close to a HGrégoire Civic LX ($13,088 at 109,895 km) despite meaningfully less mileage here (94k km) — fair-to-good value, not overpriced.","priceCompareTone":"good","reasoning":"LX trim means the standard 2.0L engine for this generation (not the 1.5T you're avoiding — LX never got the turbo). CARFAX available, heated seats, CarPlay, both winter and summer tire sets included, seller says no repairs needed. Under both your budget and mileage caps with real documentation behind it.","redFlags":["Dealer listing — confirm CARFAX directly rather than taking the seller's word"],"reliability":"LX trim confirms the 2.0L non-turbo engine — no widespread known issues. Civics are extremely common in Montreal; cheap parts and any independent garage can handle service without needing the dealer.","scannedAt":"2026-09-12","score":82,"status":"new","title":"2016 Honda Civic LX","url":"https://www.facebook.com/marketplace/item/1853876685979544/","verdict":"Strong buy","year":2016,"id":"fb-1853876685979544"},
+  {"location":"Montréal-Est, QC","make":"Mazda","mileage":95023,"model":"Mazda3","postedAt":"1 week ago","price":18989,"reasoning":"Newest and lowest-mileage of the Mazda3 candidates but at $18,989 it's almost $4,000 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $3,989"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2020 Mazda3 (2.5L, AWD)","url":"https://www.facebook.com/marketplace/item/1881583809894471/","verdict":"Over budget — reject","year":2020,"id":"fb-1881583809894471"},
+  {"location":"Laval, QC","make":"Mazda","mileage":91000,"model":"Mazda3","postedAt":"1 week ago","price":13000,"priceCompare":"Cheapest of the Mazda3s compared, likely reflecting the disclosed 2025 accident repair rather than a hidden problem — a fair discount for that history, not underpriced in a suspicious way.","priceCompareTone":"good","reasoning":"GT trim, fully equipped, no rust, 156-point inspection with 1-year warranty — good value under budget. But the seller discloses a 2025 accident with the left fender and left door replaced. Not a title dealbreaker, but real repair history to weigh against the price.","redFlags":["Disclosed 2025 accident — left fender and door replaced"],"reliability":"2.0L (GT trim) has no widespread known issues. Mazda has solid presence in Montreal — parts are affordable and routine work is easy at any independent garage, not just a Mazda dealer.","scannedAt":"2026-09-11","score":58,"status":"new","title":"2017 Mazda3 GT","url":"https://www.facebook.com/marketplace/item/1995365571173392/","verdict":"Consider — disclosed accident","year":2017,"id":"fb-1995365571173392"},
+  {"location":"Laval, QC","make":"Honda","mileage":117000,"model":"Civic","postedAt":"4 weeks ago","price":13500,"reasoning":"Seller states outright this vehicle is REBUILT ('RECONSTRUIT'). Automatic reject regardless of price. This is the same dealer/address as another rebuilt-title Civic in this batch (Ali Faour, 1458 Valleyfield, Laval) — worth avoiding that seller for future scans too.","redFlags":["Rebuilt title — hard dealbreaker","Same dealer as another rebuilt-title listing in this batch"],"scannedAt":"2026-09-10","score":4,"status":"new","title":"2019 Honda Civic LX","url":"https://www.facebook.com/marketplace/item/2101448440798394/","verdict":"Reject — dealbreaker","year":2019,"id":"fb-2101448440798394"},
+  {"location":"Montréal, QC","make":"Honda","mileage":159900,"model":"CR-V","postedAt":"1 week ago","price":13900,"reasoning":"Well documented recent maintenance (brakes, tie rods, alignment) but at 159,900 km it's well over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (159.9k km)"],"scannedAt":"2026-09-11","score":12,"status":"new","title":"2016 Honda CR-V EX AWD","url":"https://www.facebook.com/marketplace/item/2117956725599669/","verdict":"Over mileage — reject","year":2016,"id":"fb-2117956725599669"},
+  {"location":"Laval, QC","make":"Honda","mileage":118000,"model":"Civic","postedAt":"4 weeks ago","price":16500,"reasoning":"Seller confirms this is the 1.5L turbo engine — the exact engine you asked to avoid due to oil dilution in cold weather. On top of that, the seller mentions an accident repair. Two separate dealbreakers on your criteria.","redFlags":["1.5L turbo engine — hard dealbreaker per your criteria","Accident repair mentioned"],"scannedAt":"2026-09-10","score":8,"status":"new","title":"2019 Honda Civic Touring","url":"https://www.facebook.com/marketplace/item/2485751288589298/","verdict":"Reject — dealbreaker","year":2019,"id":"fb-2485751288589298"},
+  {"location":"St-Eustache, QC","make":"Toyota","mileage":87757,"model":"Corolla","postedAt":"5 weeks ago","price":20998,"reasoning":"Over your new $15,000 hard budget cap by close to $6,000. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,998"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2020 Toyota Corolla SE","url":"https://www.facebook.com/marketplace/item/2491276574683313/","verdict":"Over budget — reject","year":2020,"id":"fb-2491276574683313"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":93000,"model":"RAV4","postedAt":"1 week ago","price":16500,"reasoning":"One owner, minor cosmetic marks only, but $1,500 over your $15,000 cap. The listing states a 1.8L engine, which doesn't match any RAV4 of this generation (they're 2.5L) — likely a data-entry error on the ad, but confirm the actual engine before trusting anything else in the listing. Newer seller account (2023).","redFlags":["Over your $15,000 max budget by $1,500","Listed engine size (1.8L) doesn't match this model — verify","Newer seller account (2023)"],"scannedAt":"2026-09-10","score":20,"status":"new","title":"2015 Toyota RAV4","url":"https://www.facebook.com/marketplace/item/2534401623737097/","verdict":"Over budget — reject","year":2015,"id":"fb-2534401623737097"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":72448,"model":"Corolla","postedAt":"4 weeks ago","price":12500,"priceCompare":"The best-value Corolla found — another 2017 Corolla we scanned costs $2,495 more with 32,000 km more on it.","priceCompareTone":"good","reasoning":"Priced at the low end of the $12-16k window with unusually low mileage (72k) for this generation — good value on paper. But the seller's description is completely blank: no confirmation of CVT/transmission fluid history (your dealbreaker check), trim, or automatic emergency braking. Seller is highly rated (24 reviews) which helps trust — message them before anything else.","redFlags":["No seller description — can't confirm CVT fluid history","Trim / AEB not stated"],"reliability":"Corolla of this generation has no widespread known issues — among the most reliable compact cars made, provided the CVT fluid history checks out (your dealbreaker question). Extremely common in Montreal — cheap parts everywhere, any independent garage services it easily.","scannedAt":"2026-09-10","score":74,"status":"new","title":"2017 Toyota Corolla","url":"https://www.facebook.com/marketplace/item/27657826833858792/","verdict":"Consider — confirm details","year":2017,"id":"fb-27657826833858792"},
+  {"location":"Vaudreuil-Dorion, QC","make":"Honda","mileage":90215,"model":"Civic","postedAt":"1 day ago","price":17999,"reasoning":"Was a solid dealer listing (no accident, heated seats, 5/5 NHTSA) but at $17,999 it's about $3,000 over your new $15,000 hard budget cap.","redFlags":["Over your $15,000 max budget by $2,999"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2019 Honda Civic LX","url":"https://www.facebook.com/marketplace/item/28337519962537550/","verdict":"Over budget — reject","year":2019,"id":"fb-28337519962537550"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":117000,"model":"Camry","postedAt":"1 day ago","price":15495,"reasoning":"V6 engine, which your criteria flags as costlier to own than the 4-cylinder you'd prefer, and at $15,495 it's also $495 over your hard budget cap. Description is thin (no maintenance history), 2 owners.","redFlags":["Over your $15,000 max budget by $495","V6 engine — costlier to own than preferred 4-cyl","2 owners, thin description"],"scannedAt":"2026-09-10","score":25,"status":"new","title":"2015 Toyota Camry XLE V6","url":"https://www.facebook.com/marketplace/item/2911184662613633/","verdict":"Over budget — reject","year":2015,"id":"fb-2911184662613633"},
+  {"location":"Montréal-Est, QC","make":"Mazda","mileage":105638,"model":"Mazda3","postedAt":"14 hours ago","price":14789,"priceCompare":"Priced almost identically to a HGrégoire Mazda3 at $14,988 despite having nearly 3x the mileage (105.6k vs 37.5k km) — not a bad price alone, but the other listing is clearly the better buy at this price point.","priceCompareTone":"warn","reasoning":"2.0L confirmed, manual transmission, one owner, 5/5 NHTSA rating, excellent condition, inspection included. Dealer listing (DriveGood-boosted) but under both your budget and mileage caps with solid documentation.","redFlags":["Dealer listing — verify the inspection claim directly"],"reliability":"2.0L Skyactiv-G confirmed — no widespread known issues. Mazda has good presence in Montreal; routine service (brakes, suspension, filters) is cheap and easy at any independent garage.","scannedAt":"2026-09-12","score":76,"status":"new","title":"2019 Mazda3 (2.0L, manual)","url":"https://www.facebook.com/marketplace/item/3672544982883409/","verdict":"Good deal","year":2019,"id":"fb-3672544982883409"},
+  {"location":"Montréal, QC","make":"Honda","mileage":123400,"model":"CR-V","postedAt":"2 years ago","price":13000,"reasoning":"Already a stale listing (2 years old) with a disclosed accident, and at 123,400 km it's also over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (123.4k km)","Listed 2 years ago — likely stale"],"scannedAt":"2026-09-11","score":8,"status":"new","title":"2015 Honda CR-V","url":"https://www.facebook.com/marketplace/item/433786906202937/","verdict":"Over mileage — reject","year":2015,"id":"fb-433786906202937"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":44898,"model":"Corolla","postedAt":"3 weeks ago","price":20995,"reasoning":"Was a strong LE match with winter tires included, but at $20,995 it's nearly $6,000 over your new $15,000 hard budget cap. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,995"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2021 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/4408644126019733/","verdict":"Over budget — reject","year":2021,"id":"fb-4408644126019733"},
+  {"location":"Pointe-Calumet, QC","make":"Honda","mileage":100000,"model":"Civic","postedAt":"4 weeks ago","price":15000,"reasoning":"Manual transmission, recent front brakes (2025), under your mileage cap, but right at your $15,000 budget ceiling with almost no detail — trim and engine aren't stated, so your 1.5T dealbreaker isn't ruled out (coupe trims in this generation could be LX, EX, or Si). Ask before anything else.","redFlags":["Trim/engine not stated — must confirm before considering further","At the very top of your budget"],"scannedAt":"2026-09-12","score":45,"status":"new","title":"2018 Honda Civic (manual coupe)","url":"https://www.facebook.com/marketplace/item/4543652165956012/","verdict":"Consider — confirm engine","year":2018,"id":"fb-4543652165956012"},
+  {"location":"Montréal, QC","make":"Honda","mileage":148000,"model":"CR-V","postedAt":"1 week ago","price":11000,"reasoning":"Seller states outright the vehicle has REBUILT status ('état Reconstruit'), bought that way in 2017. Automatic reject under your title-status dealbreaker regardless of the attractive price. Mileage is also at the very top of the window.","redFlags":["Rebuilt title — hard dealbreaker","High mileage (148k)"],"scannedAt":"2026-09-10","score":5,"status":"new","title":"2016 Honda CR-V","url":"https://www.facebook.com/marketplace/item/4603179639902049/","verdict":"Reject — dealbreaker","year":2016,"id":"fb-4603179639902049"},
+  {"location":"Montréal, QC","make":"Toyota","mileage":111000,"model":"Corolla","postedAt":"1 year ago","price":15000,"reasoning":"Was your most transparent, best-documented listing — one owner, maintenance every 6 months, free tire sets — but at 111,000 km it's just over your new under-110,000 km hard mileage ceiling. Reject under the new rule; worth revisiting only if you loosen the mileage cap slightly, since it clears the old window comfortably.","redFlags":["Over your new 110,000 km mileage ceiling by 1,000 km"],"scannedAt":"2026-09-10","score":15,"status":"new","title":"2017 Toyota Corolla SE","url":"https://www.facebook.com/marketplace/item/465238816622852/","verdict":"Over mileage — reject","year":2017,"id":"fb-465238816622852"},
+  {"location":"St-Jérôme, QC","make":"Toyota","mileage":44446,"model":"Corolla","postedAt":"10 weeks ago","price":20844,"reasoning":"Over your new $15,000 hard budget cap by close to $6,000. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,844"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2020 Toyota Corolla","url":"https://www.facebook.com/marketplace/item/939492105765918/","verdict":"Over budget — reject","year":2020,"id":"fb-939492105765918"},
+  {"location":"St-Esprit, QC","make":"Subaru","mileage":108187,"model":"Impreza","postedAt":"8 weeks ago","price":8995,"priceCompare":"Cheapest Impreza found, but it also has the most mileage and the thinnest listing (dealer, one-line description) — priced in line with that, not a clear steal or a ripoff.","priceCompareTone":"warn","reasoning":"Cheap and reasonable mileage, but dealer listing (Automobiles Hamelin) with a generic one-line description — no confirmation of AWD condition, oil consumption history, or accident history. Ask directly before anything else.","redFlags":["Thin dealer description — no maintenance or accident detail","Oil consumption history not mentioned"],"reliability":"This era's Subaru engines can run slightly higher oil consumption than average — ask about oil top-up history. Otherwise no major known issues. Subaru is less common than Toyota/Honda here but still well-supported for routine service at independent garages.","scannedAt":"2026-09-11","score":50,"status":"new","title":"2016 Subaru Impreza","url":"https://www.facebook.com/marketplace/item/972028292540233/","verdict":"Consider — thin listing","year":2016,"id":"fb-972028292540233"},
+  {"location":"Laval, QC","make":"Honda","mileage":113000,"model":"Civic","postedAt":"11 weeks ago","price":14000,"reasoning":"Already flagged for a disclosed accident and unconfirmed engine, and at 113,000 km it's now also over your new under-110,000 km hard mileage ceiling.","redFlags":["Over your new 110,000 km mileage ceiling (113k km)","Accident disclosed","Engine size not confirmed"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2019 Honda Civic","url":"https://www.facebook.com/marketplace/item/993649433291267/","verdict":"Over mileage — reject","year":2019,"id":"fb-993649433291267"},
+  {"location":"Boisbriand, QC","make":"Toyota","mileage":43271,"model":"Corolla","postedAt":"7 weeks ago","price":20997,"reasoning":"Over your new $15,000 hard budget cap by close to $6,000. This entire 2020-2022 Corolla row is now out of budget.","redFlags":["Over your $15,000 max budget by $5,997"],"scannedAt":"2026-09-10","score":10,"status":"new","title":"2020 Toyota Corolla LE","url":"https://www.facebook.com/marketplace/item/999877809518362/","verdict":"Over budget — reject","year":2020,"id":"fb-999877809518362"},
+  {"location":"St-Léonard, QC (HGrégoire)","make":"Honda","mileage":109895,"model":"Civic","postedAt":"dealer inventory","price":13088,"priceCompare":"$512 cheaper than a private-party 2016 Civic LX we found ($13,600 at 94k km) despite having ~16k more km. No dealer premium here — priced keener than the private comp.","priceCompareTone":"good","reasoning":"Dealer listing (HGrégoire, 219-point inspection + 7-day guarantee). LX trim confirms the 2.0L engine (not the 1.5T you're avoiding), heated seats, VIN provided. Mileage is just barely under your 110,000 km cap (109,895 km) — worth knowing you're right at the edge.","redFlags":["Right at the edge of your 110,000 km mileage cap"],"reliability":"LX means the 2.0L non-turbo engine — no widespread known issues (unlike the 1.5T you're avoiding). Civics are everywhere in Montreal; parts are cheap and any independent garage can service one without trouble.","scannedAt":"2026-09-13","score":75,"status":"new","title":"2016 Honda Civic LX (HGrégoire)","url":"https://www.hgregoire.com/used-car/honda-civic-2016-for-sale-82976223","verdict":"Good deal — at mileage edge","year":2016,"id":"hg-730517A"},
+  {"location":"St-Eustache, QC (HGrégoire)","make":"Hyundai","mileage":97467,"model":"Elantra","postedAt":"dealer inventory","price":14998,"priceCompare":"Same year and near-identical mileage (97.5k vs 96k) as a private listing we found at $12,500 — this one costs $2,498 more. The clearest dealer premium found this scan; the inspection/warranty may be worth it, but know you're paying for it.","priceCompareTone":"bad","reasoning":"Same dealer-standard transparency as the other HGrégoire Elantra: 219-point inspection passed across the board, 2.0L confirmed, heated seats, blind spot sensor, VIN provided, 7-day money-back guarantee. Right at your $15,000 budget ceiling.","redFlags":["At the very top of your $15,000 budget"],"reliability":"Same as the other Elantra: 2.0L MPI has no widespread known issues and sits outside the GDI recall history. Very common car here — cheap parts, serviceable at any independent garage.","scannedAt":"2026-09-13","score":76,"status":"new","title":"2020 Hyundai Elantra Preferred (HGrégoire)","url":"https://www.hgregoire.com/used-car/hyundai-elantra-2020-for-sale-82973105","verdict":"Good deal — full inspection passed","year":2020,"id":"hg-822601"},
+  {"location":"St-Léonard, QC (HGrégoire)","make":"Hyundai","mileage":100892,"model":"Elantra","postedAt":"dealer inventory","price":13698,"priceCompare":"$1,198 more than a 2020 (newer!) Elantra we found privately at similar mileage ($12,500 at 96k km). Likely reflects the dealer inspection/warranty, but you're paying a premium for an older car.","priceCompareTone":"warn","reasoning":"Dealer listing with a real 219-point inspection report showing Engine, Transmission, Electrical, Brakes, and Suspension all 'Passed'. 2.0L confirmed (standard engine, not part of the Hyundai GDI/turbo caution), heated seats, CarPlay/Android Auto, blind spot sensor, VIN provided. Comes with HGrégoire's 7-day money-back guarantee.","redFlags":[],"reliability":"The 2.0L MPI engine has no widespread known issues and isn't part of the Hyundai/Kia GDI engine-failure recall history. Elantras are common in Quebec — cheap parts, easy for any independent garage to service, no need for a dealer for routine work.","scannedAt":"2026-09-13","score":78,"status":"new","title":"2019 Hyundai Elantra Preferred (HGrégoire)","url":"https://www.hgregoire.com/used-car/hyundai-elantra-2019-for-sale-82974276","verdict":"Good deal — full inspection passed","year":2019,"id":"hg-822787"},
+  {"location":"St-Léonard, QC (HGrégoire)","make":"Mazda","mileage":37574,"model":"Mazda3","postedAt":"dealer inventory","price":14988,"priceCompare":"Same price bracket as another Mazda3 we found ($14,789 at 105,638 km) but with a third of the mileage. Not a dealer premium — underpriced relative to comps once you weigh the mileage.","priceCompareTone":"good","reasoning":"From HGrégoire, a real Quebec dealer network (not a marketplace listing) — comes with their 219-point inspection and 7-day money-back guarantee. 2.0L confirmed, VIN provided, and explicitly badged 'No Accident' and 'One Owner'. Priced below their own stated retail ($15,770). 37,574 km is exceptional for a 2016 — by far the lowest mileage of any target-model listing found across both sources.","redFlags":[],"reliability":"Mazda's 2.0L Skyactiv-G has no widespread known issues — it's a robust, reliable engine. Mazda has a solid presence in Montreal; routine mechanical work (brakes, suspension, filters) is cheap and easy at any independent garage. Only unusual Mazda-specific electronics would ever need a dealer.","scannedAt":"2026-09-13","score":92,"status":"new","title":"2016 Mazda3 GS (HGrégoire)","url":"https://www.hgregoire.com/used-car/mazda-3-2016-for-sale-82975074","verdict":"Strong buy — exceptional mileage","year":2016,"id":"hg-822900"},
+  {"location":"Saguenay, QC (HGrégoire)","make":"Subaru","mileage":87308,"model":"Impreza","postedAt":"dealer inventory","price":12977,"priceCompare":"$3,477 more than the best Impreza we found ($9,500 at 65k km, private) despite having more mileage. Reflects HGrégoire's inspection/reconditioning/warranty rather than pure markup, but the private listing remains the sharper raw deal.","priceCompareTone":"warn","reasoning":"Dealer listing (HGrégoire) with 219-point inspection and 7-day guarantee. AWD and 2.0L both confirmed, VIN provided, summer tires included. Priced about $2,500 under their stated retail. No accident/one-owner badge shown on this one (unlike the Mazda3), so ask directly, but nothing negative flagged either.","redFlags":["No accident/one-owner badge shown — ask directly to confirm"],"reliability":"This era's Subaru 2.0L boxer engine can run slightly higher oil consumption than average — not a dealbreaker, just check oil between changes. AWD driveline itself is robust. Subaru is less common than Toyota/Honda here but still well-supported — most independent garages handle routine AWD service fine; a full driveline job might mean a Subaru specialist.","scannedAt":"2026-09-13","score":82,"status":"new","title":"2017 Subaru Impreza Convenience AWD (HGrégoire)","url":"https://www.hgregoire.com/used-car/subaru-impreza-2017-for-sale-82969950","verdict":"Strong buy","year":2017,"id":"hg-SH0411A"}
+];
+
+(function(){
+  var state = { minScore: 80, sortBy: "score" };
+
+  function scoreClass(score){
+    if (score >= 80) return "good";
+    if (score >= 60) return "warn";
+    return "bad";
+  }
+  function fmtPrice(p){ return typeof p === "number" ? "$" + p.toLocaleString("en-US") : "—"; }
+  function fmtKm(m){ return typeof m === "number" ? m.toLocaleString("en-US") + " km" : "—"; }
+  function esc(s){
+    var d = document.createElement("div");
+    d.textContent = (s === undefined || s === null) ? "" : String(s);
+    return d.innerHTML;
+  }
+
+  function render(){
+    var grid = document.getElementById("grid");
+    var empty = document.getElementById("emptyState");
+    var countLabel = document.getElementById("countLabel");
+
+    var filtered = LISTINGS.filter(function(c){ return (c.score || 0) >= state.minScore; });
+    filtered.sort(function(a, b){
+      if (state.sortBy === "price") return (a.price || Infinity) - (b.price || Infinity);
+      return (b.score || 0) - (a.score || 0);
+    });
+
+    var total = LISTINGS.length;
+    var avg = total ? Math.round(LISTINGS.reduce(function(s,c){ return s + (c.score || 0); }, 0) / total) : 0;
+
+    document.getElementById("stats").innerHTML = [["Scanned", total], ["Avg score", avg], ["Shown", filtered.length]]
+      .map(function(s){ return '<div class="stat-tile"><div class="num">' + s[1] + '</div><div class="label">' + s[0] + '</div></div>'; })
+      .join("");
+
+    countLabel.textContent = filtered.length + " of " + total + " shown";
+
+    if (filtered.length === 0){ grid.innerHTML = ""; empty.hidden = false; return; }
+    empty.hidden = true;
+
+    grid.innerHTML = filtered.map(function(c){
+      var sc = typeof c.score === "number" ? c.score : 0;
+      var cls = scoreClass(sc);
+      var flags = Array.isArray(c.redFlags) ? c.redFlags : [];
+      return (
+        '<div class="card">' +
+          '<div class="card-head">' +
+            '<h3>' + esc(c.title || (c.year ? c.year + " " : "") + (c.make || "") + " " + (c.model || "")) + '</h3>' +
+            '<div class="price-block"><div class="price">' + fmtPrice(c.price) + '</div>' +
+              (c.priceCompare ? '<div class="price-compare ' + esc(c.priceCompareTone || "warn") + '">' + esc(c.priceCompare) + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="facts">' +
+            (c.year ? '<span>' + esc(c.year) + '</span>' : '') +
+            (typeof c.mileage === "number" ? '<span>' + fmtKm(c.mileage) + '</span>' : '') +
+            (c.location ? '<span>' + esc(c.location) + '</span>' : '') +
+          '</div>' +
+          '<div class="score-row">' +
+            '<span class="badge ' + cls + '"><span class="n">' + sc + '</span> / 100</span>' +
+            (c.verdict ? '<span class="badge ' + cls + '">' + esc(c.verdict) + '</span>' : '') +
+          '</div>' +
+          (c.reasoning ? '<div class="reasoning"><span class="label">Why</span>' + esc(c.reasoning) + '</div>' : '') +
+          (c.reliability ? '<div class="reliability"><span class="label">\u{1F527} Reliability &amp; Montreal service</span>' + esc(c.reliability) + '</div>' : '') +
+          (flags.length ? '<div class="flags">' + flags.map(function(f){ return '<span class="flag">' + esc(f) + '</span>'; }).join("") + '</div>' : '') +
+          '<div class="card-foot">' +
+            '<span class="status-tag">' + esc(c.status || "new") + '</span>' +
+            (c.url ? '<a class="view-link" href="' + esc(c.url) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
+            (c.scannedAt ? '<span class="scanned">' + esc(c.scannedAt) + '</span>' : '') +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  document.getElementById("minScore").addEventListener("input", function(e){ state.minScore = Number(e.target.value) || 0; render(); });
+  document.getElementById("sortBy").addEventListener("change", function(e){ state.sortBy = e.target.value; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

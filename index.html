@@ -108,15 +108,19 @@
   .card-titles h3{ font-size:1.15rem; font-weight:700; line-height:1.25; }
   .verdict{ font-size:.82rem; font-weight:600; color:var(--muted); margin-top:.25rem; }
 
-  .price-block{ display:flex; flex-direction:column; align-items:flex-end; gap:.35rem; flex-shrink:0; margin-left:auto; }
+  .price-block{ flex-shrink:0; margin-left:auto; text-align:right; }
   .price{ font-family:"Sora", sans-serif; font-size:1.35rem; font-weight:800; white-space:nowrap; }
-  .price-compare{
-    font-size:.68rem; font-weight:700; line-height:1.35; text-align:right; max-width:11.5rem;
-    padding:.3rem .6rem; border-radius:12px; white-space:normal;
+
+  .price-check{
+    font-size:.85rem; color:var(--ink); border-radius:14px; padding:.7rem .85rem;
   }
-  .price-compare.good{ background:var(--good-soft); color:var(--good-ink); }
-  .price-compare.warn{ background:var(--warn-soft); color:var(--warn-ink); }
-  .price-compare.bad{ background:var(--bad-soft); color:var(--bad-ink); }
+  .price-check .label{ font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:.3rem; margin-bottom:.3rem; }
+  .price-check.good{ background:var(--good-soft); }
+  .price-check.good .label{ color:var(--good-ink); }
+  .price-check.warn{ background:var(--warn-soft); }
+  .price-check.warn .label{ color:var(--warn-ink); }
+  .price-check.bad{ background:var(--bad-soft); }
+  .price-check.bad .label{ color:var(--bad-ink); }
 
   .facts{ display:flex; flex-wrap:wrap; gap:.4rem; }
   .facts span{
@@ -158,7 +162,6 @@
 
   @media (max-width:520px){
     .wrap{ padding:1.25rem 1rem 3rem; }
-    .price-block{ align-items:flex-start; }
   }
 </style>
 </head>
@@ -298,9 +301,7 @@ var LISTINGS = [
               '<h3>' + esc(c.title || (c.year ? c.year + " " : "") + (c.make || "") + " " + (c.model || "")) + '</h3>' +
               (c.verdict ? '<div class="verdict">' + esc(c.verdict) + '</div>' : '') +
             '</div>' +
-            '<div class="price-block"><div class="price">' + fmtPrice(c.price) + '</div>' +
-              (c.priceCompare ? '<div class="price-compare ' + esc(c.priceCompareTone || "warn") + '">' + esc(c.priceCompare) + '</div>' : '') +
-            '</div>' +
+            '<div class="price-block"><div class="price">' + fmtPrice(c.price) + '</div></div>' +
           '</div>' +
           '<div class="facts">' +
             (c.year ? '<span>' + esc(c.year) + '</span>' : '') +
@@ -308,6 +309,7 @@ var LISTINGS = [
             (c.location ? '<span>' + esc(c.location) + '</span>' : '') +
           '</div>' +
           (flags.length ? '<div class="flags">' + flags.map(function(f){ return '<span class="flag">' + esc(f) + '</span>'; }).join("") + '</div>' : '') +
+          (c.priceCompare ? '<div class="price-check ' + esc(c.priceCompareTone || "warn") + '"><span class="label">\u{1F3F7}\u{FE0F} Price vs. comparables</span>' + esc(c.priceCompare) + '</div>' : '') +
           (c.reasoning ? '<div class="reasoning">' + esc(c.reasoning) + '</div>' : '') +
           (c.reliability ? '<div class="reliability"><span class="label">\u{1F527} Reliability &amp; Montreal service</span>' + esc(c.reliability) + '</div>' : '') +
           '<div class="card-foot">' +
